@@ -1,0 +1,72 @@
+  beliefs:
+	position(0).													
+	lower(X,Y):- Y is X + 1.											
+	upper(X,Y):- Y is X - 1.
+	list_length(List, L):- 												
+		length(List, Le), 
+		L is Le/2.
+		
+	nth2([X|_],0,X).													
+	nth2([_|R],C,X):- 
+		C > 0, 
+		C2 is C-1, 
+		nth2(R,C2,X).
+		
+	at_end:- 																
+		neighbor_count(Length), 
+		position(P), 
+		P2 is P+1, 
+		P2 = Length.
+		
+	right_neighbor(MyNr, List,Right) :- 						
+		C is (MyNr+1)*2, 
+		nth2(List,C,Right).
+	
+beliefupdates: 
+	{position(P), upper(P,NewP)} Move(up) {not position(P), position(NewP)}		
+	{position(P), lower(P,NewP)} Move(down) {not position(P), position(NewP)}
+	{list_length(L,Length)} NeighborCount([_|L]) {neighbor_count(Length)}		
+	
+plans:  
+	@env(perceive(),L);  							
+	if(B(L=[])){										
+		print('Not participating.');
+	} else {													
+		NeighborCount(L);
+		if(B(L=[0|Tail])){								
+			@env(set_move_delay(0),_);		                       
+			move(0,Tail); 							
+		} 
+	}
+	
+pcrules: 
+	move(_,[First|_]) <- not(at_end) | {	                               
+		@env(move(down),_);
+		Move(down);
+		@env(finished(),_); 							
+		send(First,inform,request(move));                           
+	}
+
+	move(MyNr,List) <- at_end | {				
+		while(B(not(position(0)))){				
+			@env(move(up),_);
+			Move(up);
+		}
+		notify_right(MyNr,List);					
+	}
+	
+	message(_,_,_,_,request(move)) <- true | {
+		@env(perceive(),L);  						
+		B(L=[MyNr|List]);
+		move(MyNr,List);
+	}
+	
+	
+	notify_right(MyNr,List) <- right_neighbor(MyNr, List,Right) | {
+                send(Right,inform,request(move));
+        }
+	
+	notify_right(MyNr,[First|_])<-true|{
+		print('All solutions found'); 
+		
+	} 

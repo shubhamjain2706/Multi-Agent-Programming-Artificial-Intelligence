@@ -1,0 +1,119 @@
+
+beliefs:   
+	position(0).																
+	lower(X,Y):- Y is X + 1.												
+	upper(X,Y):- Y is X - 1.
+	list_length(List, L):- 												
+		length(List, Le), 
+		L is Le/2.
+	nth2([X|_],0,X).														
+	nth2([_|R],C,X):- 
+		C > 0, 
+		C2 is C-1, 
+		nth2(R,C2,X).
+		
+	at_end:- 																	
+		neighbor_count(Length), 
+		position(P), 
+		P2 is P+1, 
+		P2 = Length.
+	 
+	adopt_legal(alternative,MyNr,List,Result):- 		
+		position(P), 
+		neighbor_count(C),
+		P2 is P + 1,
+		P2 < C,
+		try_positions(P2,List, MyNr, Result).  				
+	adopt_legal(adjustment,MyNr,List,Result):- 		
+		try_positions(0,List, MyNr, Result). 
+	adopt_legal(_,_,_,-1).												
+	
+	try_positions(Current, List, MyNr, Current):- 		
+		legal_position(0, MyNr, List, Current).
+	try_positions(Current,List, MyNr, Result):- 			
+		C2 is Current+1, 
+		neighbor_count(L2), 
+		C2 < L2, 
+		try_positions(C2,List,MyNr,Result).
+	
+	legal_position(Me,Me,_,P).										
+	legal_position(Other,Me,[_,OtherP|Rest],P):-		
+		Other < Me,
+		not(attacks(Me,P,Other,OtherP)),
+		Next is Other + 1,
+		legal_position(Next,Me,Rest,P).
+		
+	attacks(_,Y,_,Y).														
+	attacks(Nr,Y,Nr2,Y2):- 											
+		D1 is (Nr-Nr2)*(Nr-Nr2), 
+		D2 is (Y-Y2)*(Y-Y2), 
+		D1 = D2.
+	
+	right_neighbor(MyNr, List,Right) :- C is (MyNr+1)*2, nth2(List,C,Right). 
+	left_neighbor(MyNr, List,Left) :- C is (MyNr-1)*2, nth2(List,C,Left).
+		
+beliefupdates: 
+	{position(P), upper(P,NewP)} Move(up) {not position(P), position(NewP)}		
+	{position(P), lower(P,NewP)} Move(down) {not position(P), position(NewP)}
+	{list_length(L,Length)} NeighborCount([_|L]) {neighbor_count(Length)}		
+	 
+plans: 
+	@env(perceive(),L);  									
+	if(B(L=[])){
+		print('Not participating.');
+	} else {
+		NeighborCount(L);									
+		if(B(L=[1|_])){
+			@env(set_move_delay(0),_);				
+			go_to_legal_position(adjustment); 	
+		} 
+	}
+	
+pcrules:   
+	go_to_legal_position(Type) <- true | {
+		@env(perceive(),L);									
+		B(L=[MyNr|Positions]); 
+		if(B(MyNr=0)){
+			first_queen_move(Positions);				
+		} else {
+			B(adopt_legal(Type,MyNr,Positions,Pos)); 	
+			if(B(Pos < 0)){										
+				notify_left(MyNr,Positions);			
+			} else {
+				move_towards(Pos);							
+				notify_right(MyNr,Positions);
+			}
+		}
+	}
+
+	move_towards(Pos) <- true | {
+		B(position(P));
+		while(B(not(position(Pos)))){				
+				if(B(P<Pos)) { 
+					@env(move(down)); 
+					Move(down); 
+				} else { 
+					@env(move(up)); 
+					Move(up); 
+				}
+			}
+	}
+	
+first_queen_move(List) <- true | {
+	if(B(at_end)){											
+		print('All solutions found');
+	} else { 													
+		@env(move(down));
+		Move(down);
+		notify_right(0,List);
+	} 
+}  
+	
+
+message(_,_,_,_,request(X)) <- true | { go_to_legal_position(X); }
+notify_left(MyNr,List) <- left_neighbor(MyNr, List,Left)  | {send(Left,inform, request(alternative));}
+notify_right(MyNr,List) <- right_neighbor(MyNr, List,Right) | {send(Right,inform,request(adjustment));}
+notify_right(MyNr,List)<-true|{
+		@env(finished(),_);  			
+		notify_left(MyNr,List) ;		
+	}  

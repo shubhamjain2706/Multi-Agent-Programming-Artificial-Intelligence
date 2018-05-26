@@ -1,0 +1,25 @@
+<apaplmas>
+	<environment name="env" file="env.jar"/>
+	<agent name="Agent 1" file="BF.2apl"/>
+	<agent name="Agent 2" file="BF.2apl"/>
+	<agent name="Agent 3" file="BF.2apl"/>
+	<agent name="Agent 4" file="BF.2apl"/>
+    <agent name="Agent 5" file="BF.2apl"/>
+	<agent name="Agent 6" file="BF.2apl"/>
+	<agent name="Agent 7" file="BF.2apl"/>
+	<agent name="Agent 8" file="BF.2apl"/>
+    	<agent name="Agent 9" file="BF.2apl"/>
+	<agent name="Agent 10" file="BF.2apl"/>
+	<agent name="Agent 11" file="BF.2apl"/>
+	<agent name="Agent 12" file="BF.2apl"/>
+    <agent name="Agent 13" file="BF.2apl"/>
+	<agent name="Agent 14" file="BF.2apl"/>
+	<agent name="Agent 15" file="BF.2apl"/>
+	<agent name="Agent 16" file="BF.2apl"/>
+	<agent name="Agent 17" file="BF.2apl"/>
+	<agent name="Agent 18" file="BF.2apl"/>
+	<agent name="Agent 19" file="BF.2apl"/>
+    <agent name="Agent 20" file="BF.2apl"/>
+
+    
+</apaplmas>
